@@ -1,0 +1,16 @@
+[package]
+name = "v-smol-font"
+version = "0.1.0"
+edition = "2021"
+authors = ["Rowan S-L <r@fawkes.io>"]
+license = "MIT"
+description = "Very small bitmap font (4x4)"
+homepage = "https://github.com/rowan-sl/trifit"
+repository = "https://github.com/rowan-sl/trifit"
+keywords = ["font", "bitmap"]
+categories = ["embedded", "graphics", "no-std"]
+publish = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]

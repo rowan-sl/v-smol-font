@@ -154,7 +154,75 @@ pub mod original {
 ///
 /// Automatically upercases ascii alphabetics, as all fonts do not support lowercase.
 pub const fn index(c: char) -> Option<usize> {
-    todo!()
+    // consteval reeeeeee
+    // this was auto-generated
+    Some(match c {
+        '0' => 0,
+        '1' => 1,
+        '2' => 2,
+        '3' => 3,
+        '4' => 4,
+        '5' => 5,
+        '6' => 6,
+        '7' => 7,
+        '8' => 8,
+        '9' => 9,
+        'a' => 10,
+        'b' => 11,
+        'c' => 12,
+        'd' => 13,
+        'e' => 14,
+        'f' => 15,
+        'g' => 16,
+        'h' => 17,
+        'i' => 18,
+        'j' => 19,
+        'k' => 20,
+        'l' => 21,
+        'm' => 22,
+        'n' => 23,
+        'o' => 24,
+        'p' => 25,
+        'q' => 26,
+        'r' => 27,
+        's' => 28,
+        't' => 29,
+        'u' => 30,
+        'v' => 31,
+        'w' => 32,
+        'x' => 33,
+        'y' => 34,
+        'z' => 35,
+        ' ' => 36,
+        '~' => 37,
+        '`' => 38,
+        '#' => 39,
+        '%' => 40,
+        '^' => 41,
+        '&' => 42,
+        '*' => 43,
+        '(' => 44,
+        ')' => 45,
+        '_' => 46,
+        '=' => 47,
+        '+' => 48,
+        '-' => 49,
+        '[' => 50,
+        ']' => 51,
+        '|' => 52,
+        '\\' => 53,
+        ':' => 54,
+        ';' => 55,
+        '"' => 56,
+        '\'' => 57,
+        '<' => 58,
+        '>' => 59,
+        '?' => 60,
+        '/' => 61,
+        ',' => 62,
+        '.' => 63,
+        _ => return None,
+    })
 }
 
 /// Look up a charecter in a font and return it, returning `None` if
@@ -162,7 +230,8 @@ pub const fn index(c: char) -> Option<usize> {
 ///
 /// For more details, see [`index`]
 pub const fn lookup(c: char, f: &'static Font) -> Option<BitmapChar> {
-    todo!()
+    let i = if let Some(i) = index(c) { i } else { return None };
+    Some(f.as_data()[i])
 }
 
 #[cfg(test)]
@@ -176,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_array() {
+    fn bitmap_char_to_array() {
         assert_eq!(
             super::BitmapChar::new(0b0001_0011_0111_1111).to_array(),
             [
@@ -186,5 +255,12 @@ mod tests {
                 [true, true, true, true],
             ]
         )
+    }
+
+    #[test]
+    fn index_works() {
+        for (i, c) in "0123456789abcdefghijklmnopqrstuvwxyz ~`#%^&*()_=+-[]|\\:;\"'<>?/,.".chars().enumerate() {
+            assert_eq!(Some(i), super::index(c))
+        }
     }
 }

@@ -12,16 +12,16 @@
 //!
 //! (dont worry, [`lookup`] and [`index`] handle this for you, this is just a reference)
 //!
-//! each row is 10 chars. total len is 64
+//! each row is 10 chars. total len is 68
 //!  
 //! ```text
 //! 0123456789
 //! abcdefghij
 //! klmnopqrst
-//! uvwxyz ~`#
-//! %^&*()_=+-
-//! []|\:;"'<>
-//! ?/,.        // empty space here is not included in the font
+//! uvwxyz ~`!
+//! @#%^&*_=+-
+//! (){}[]|\:;
+//! "'<>?/,.    // empty space here is not included in the font
 //! ```
 //!
 //! [`index`]: index
@@ -31,9 +31,8 @@
 #![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
 
-// this len was not planned i swear
 /// length of a font. (all charecters)
-const LENGTH: usize = 64;
+const LENGTH: usize = 68;
 
 /// contains the data for a font.
 ///

@@ -39,21 +39,21 @@ const LENGTH: usize = 68;
 /// not constructable outside this crate to ensure validity of
 /// fonts for [`index`] and [`lookup`] at the type level.
 pub struct Font {
-    data: [BitmapChar; LENGTH],
+    data: [Option<BitmapChar>; LENGTH],
 }
 
 impl Font {
     /// Private function for constructing a new font.
     /// intentionally not available outside the crate to ensure validity
     /// of fonts
-    const fn new(data: [BitmapChar; LENGTH]) -> Self {
+    const fn new(data: [Option<BitmapChar>; LENGTH]) -> Self {
         Self { data }
     }
 
     /// Gets the data for a font. each u16 contains the data for each char in row-major order.
     ///
     /// this is a irreversable operation
-    pub const fn as_data(&self) -> &[BitmapChar; LENGTH] {
+    pub const fn as_data(&self) -> &[Option<BitmapChar>; LENGTH] {
         &self.data
     }
 }
@@ -66,12 +66,6 @@ impl Font {
 pub struct BitmapChar(u16);
 
 impl BitmapChar {
-    // this is only usefull really for using it to do format conversion (no reason to have it be private)
-    /// Create a new BitmapChar. THIS IS LIKELY NOT WHAT YOU ARE LOOKING FOR! take a look at [`lookup`]
-    pub const fn new(data: u16) -> Self {
-        Self(data)
-    }
-
     /// get the bitmap data (16 bits, or 4 rows of 4 bits each).
     ///
     /// example of the return (for letter 'a', unspecified font, X=1, space=0)
@@ -117,7 +111,7 @@ impl BitmapChar {
             const fn to_bool(x: u16) -> bool {
                 if x == 1 {
                     true
-                } else if x == 0{
+                } else if x == 0 {
                     false
                 } else {
                     panic!()
@@ -130,32 +124,53 @@ impl BitmapChar {
                 to_bool(x & 0b0001),
             ]
         }
-        [
-            to_list(a),
-            to_list(b),
-            to_list(c),
-            to_list(d),
-        ]
+        [to_list(a), to_list(b), to_list(c), to_list(d)]
     }
+}
+
+/// creates a charecter from the raw data.
+/// always returns Some (for convenience of construction of font arrays)
+const fn make_char(a: u16, b: u16, c: u16, d: u16) -> Option<BitmapChar> {
+    let m = 0b1111u16;
+    let (a, b, c, d) = (a & m, b & m, c & m, d & m);
+    let mut raw = 0u16;
+    raw |= a << 12;
+    raw |= b << 8;
+    raw |= c << 4;
+    raw |= d;
+    Some(BitmapChar(raw))
+}
+
+/// creates a charecter from a bool array
+/// always returns Some (for convenience of construction of font arrays)
+const fn make_char_bool_array(arr: [[bool; 4]; 4]) -> Option<BitmapChar> {
+    let mut raw = 0u16;
+    let mut i = 0usize;
+    while i < 16 {
+        let v = arr[i / 4][i % 4];
+        raw |= (v as u16) << (15 - i);
+        i += 1;
+    }
+    Some(BitmapChar(raw))
 }
 
 /// the original, unmodified font.
 pub mod original {
-    // pub const FONT: F
+    use crate::{make_char_bool_array, Font};
+    include!("../gen/font.rs");
 }
 
 /// Get the index into the font of a spacific charecter.
 ///
 /// This index will be a valid index to all font arrays, and will return the
-/// font data for the charecter passed to it.
+/// font data for the charecter passed to it, or None if the requested charecter does not exist.
 ///
-/// Returns `None` if the requested charecter does not exist in that font.
-///
-/// Automatically upercases ascii alphabetics, as all fonts do not support lowercase.
+/// Automatically sets the same case (unspecified) for ascii alphabetics, as all fonts do not support case.
 pub const fn index(c: char) -> Option<usize> {
+    //TODO: possibly use https://github.com/rust-phf/rust-phf
     // consteval reeeeeee
     // this was auto-generated
-    Some(match c {
+    Some(match c.to_ascii_lowercase() {
         '0' => 0,
         '1' => 1,
         '2' => 2,
@@ -195,31 +210,35 @@ pub const fn index(c: char) -> Option<usize> {
         ' ' => 36,
         '~' => 37,
         '`' => 38,
-        '#' => 39,
-        '%' => 40,
-        '^' => 41,
-        '&' => 42,
-        '*' => 43,
-        '(' => 44,
-        ')' => 45,
+        '!' => 39,
+        '@' => 40,
+        '#' => 41,
+        '%' => 42,
+        '^' => 43,
+        '&' => 44,
+        '*' => 45,
         '_' => 46,
         '=' => 47,
         '+' => 48,
         '-' => 49,
-        '[' => 50,
-        ']' => 51,
-        '|' => 52,
-        '\\' => 53,
-        ':' => 54,
-        ';' => 55,
-        '"' => 56,
-        '\'' => 57,
-        '<' => 58,
-        '>' => 59,
-        '?' => 60,
-        '/' => 61,
-        ',' => 62,
-        '.' => 63,
+        '(' => 50,
+        ')' => 51,
+        '{' => 52,
+        '}' => 53,
+        '[' => 54,
+        ']' => 55,
+        '|' => 56,
+        '\\' => 57,
+        ':' => 58,
+        ';' => 59,
+        '\"' => 60,
+        '\'' => 61,
+        '<' => 62,
+        '>' => 63,
+        '?' => 64,
+        '/' => 65,
+        ',' => 66,
+        '.' => 67,
         _ => return None,
     })
 }
@@ -229,8 +248,12 @@ pub const fn index(c: char) -> Option<usize> {
 ///
 /// For more details, see [`index`]
 pub const fn lookup(c: char, f: &'static Font) -> Option<BitmapChar> {
-    let i = if let Some(i) = index(c) { i } else { return None };
-    Some(f.as_data()[i])
+    let i = if let Some(i) = index(c) {
+        i
+    } else {
+        return None;
+    };
+    f.as_data()[i]
 }
 
 #[cfg(test)]
@@ -246,7 +269,7 @@ mod tests {
     #[test]
     fn bitmap_char_to_array() {
         assert_eq!(
-            super::BitmapChar::new(0b0001_0011_0111_1111).to_array(),
+            super::BitmapChar(0b0001_0011_0111_1111).to_array(),
             [
                 [false, false, false, true],
                 [false, false, true, true],
@@ -258,8 +281,35 @@ mod tests {
 
     #[test]
     fn index_works() {
-        for (i, c) in "0123456789abcdefghijklmnopqrstuvwxyz ~`#%^&*()_=+-[]|\\:;\"'<>?/,.".chars().enumerate() {
+        for (i, c) in "0123456789abcdefghijklmnopqrstuvwxyz ~`!@#%^&*_=+-(){}[]|\\:;\"'<>?/,."
+            .chars()
+            .enumerate()
+        {
             assert_eq!(Some(i), super::index(c))
         }
+    }
+
+    #[test]
+    fn test_make_char() {
+        assert_eq!(
+            super::make_char(
+                0b1100,
+                0b1111,
+                0b1101,
+                0b1111,
+            ),
+            Some(crate::BitmapChar(0b1100_1111_1101_1111))
+        )
+    }
+
+    #[test]
+    fn test_make_char_bool_array() {
+        let a =             super::make_char_bool_array([[true, true, false, false], [true, true, true, true], [true, true, false, true], [true, true, true, true]])
+;
+        println!("{:#0b}", a.unwrap().0);
+        assert_eq!(
+            a,
+            Some(crate::BitmapChar(0b1100_1111_1101_1111))
+        )
     }
 }
